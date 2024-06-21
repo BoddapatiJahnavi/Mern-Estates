@@ -35,9 +35,13 @@ export const signin = async (req, res, next) => {
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
 
-    const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
-    const { password: Pass, ...rest} = validUser._doc;
-    res.cookie('access_token', token, { httpOnly: true }).status(200).json(res);
+    const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const { password: Pass, ...rest } = validUser._doc;
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    }).status(200).json({ user: rest, token });
   } catch (error) {
     next(errorHandler(500, 'Error during sign in'));
   }
