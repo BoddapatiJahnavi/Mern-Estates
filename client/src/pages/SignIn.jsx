@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { signInFailure, signInStart, signInSuccess } from '../redux/user/userSlice';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { loading, error } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,9 +18,8 @@ export default function SignIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
+    dispatch(signInStart());
+    
     try {
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
@@ -28,22 +29,18 @@ export default function SignIn() {
         body: JSON.stringify(formData),
       });
 
+      const data = await res.json();
+      console.log(data);
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        setLoading(false);
-        setError(errorData.message || 'Something went wrong');
+        dispatch(signInFailure(data.message || 'Signin failed'));
         return;
       }
 
-      const data = await res.json();
-      console.log(data);
-
-      setLoading(false);
+      dispatch(signInSuccess(data));
       navigate('/');
     } catch (error) {
-      console.error('Error during sign in:', error);
-      setLoading(false);
-      setError('An unexpected error occurred. Please try again.');
+      dispatch(signInFailure(error.message || 'An error occurred'));
     }
   };
 
