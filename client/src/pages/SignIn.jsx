@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInFailure, signInStart, signInSuccess } from '../redux/user/userSlice';
+import OAuth from '../components/OAuth';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -19,7 +20,7 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch(signInStart());
-    
+
     try {
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
@@ -30,15 +31,14 @@ export default function SignIn() {
       });
 
       const data = await res.json();
-      console.log(data);
-      
-      if (!res.ok) {
-        dispatch(signInFailure(data.message || 'Signin failed'));
-        return;
-      }
 
-      dispatch(signInSuccess(data));
-      navigate('/');
+      if (res.ok) {
+        dispatch(signInSuccess(data));
+        navigate('/');
+        setFormData({ email: '', password: '' }); // Reset form after successful submission
+      } else {
+        dispatch(signInFailure(data.message || 'Signin failed'));
+      }
     } catch (error) {
       dispatch(signInFailure(error.message || 'An error occurred'));
     }
@@ -70,6 +70,8 @@ export default function SignIn() {
         >
           {loading ? 'Loading...' : 'Sign In'}
         </button>
+        <OAuth/>
+        {/* Replace <OAuth /> with your actual OAuth component if necessary */}
       </form>
       <div className='flex gap-2 mt-5'>
         <p>Don't have an account?</p>
