@@ -37,10 +37,10 @@ export default function SignIn() {
         navigate('/');
         setFormData({ email: '', password: '' }); // Reset form after successful submission
       } else {
-        dispatch(signInFailure(data.message || 'Signin failed'));
+        dispatch(signInFailure(data.message));
       }
     } catch (error) {
-      dispatch(signInFailure(error.message || 'An error occurred'));
+      dispatch(signInFailure(error.message));
     }
   };
 
