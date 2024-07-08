@@ -2,7 +2,7 @@ import { useSelector } from 'react-redux';
 import { useRef, useState, useEffect } from 'react';
 import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../firebase';
-import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserFailure,deleteUserStart,deleteUserSuccess } from '../redux/user/userSlice';
+import { updateUserStart, updateUserSuccess, updateUserFailure,deleteUserStart, deleteUserFailure, deleteUserSuccess } from '../redux/user/userSlice';
 import { useDispatch } from 'react-redux';
 
 export default function Profile() {
@@ -12,7 +12,12 @@ export default function Profile() {
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    username: currentUser.username,
+    email: currentUser.email,
+    password: '',
+    avatar: currentUser.avatar,
+  });
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -38,7 +43,7 @@ export default function Profile() {
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) =>
-          setFormData({ ...formData, avatar: downloadURL })
+          setFormData((prev) => ({ ...prev, avatar: downloadURL }))
         );
       }
     );
@@ -71,13 +76,15 @@ export default function Profile() {
       dispatch(updateUserFailure(error.message));
     }
   };
-const handleDeleteUser=async()=>
-{
-  try {
+
+  const handleDeleteUser = async () => {
+   try {
     dispatch(deleteUserStart());
-    const res=await fetch(`/api/user/delete/${currentUser._id}`,{
-      method:'DELETE',
-    });
+    const res=await fetch(`/api/user/delete/${currentUser._id}`,
+      {
+        method:'DELETE',
+      }
+    );
     const data=await res.json();
     if(data.success === false)
     {
@@ -85,10 +92,17 @@ const handleDeleteUser=async()=>
       return;
     }
     dispatch(deleteUserSuccess(data));
-  } catch (error) {
+   } catch (error) {
     dispatch(deleteUserFailure(error.message));
-  }
-}
+   }
+  };
+
+  const handleSignOut = async () => {
+    // Implement sign-out functionality here
+    // Example:
+    // window.location.href = '/signin';
+  };
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -102,7 +116,7 @@ const handleDeleteUser=async()=>
         />
         <img
           onClick={() => fileRef.current.click()}
-          src={formData?.avatar || currentUser.avatar}
+          src={formData.avatar || currentUser.avatar}
           alt="profile"
           className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
         />
@@ -110,7 +124,7 @@ const handleDeleteUser=async()=>
           {fileUploadError ? (
             <span className="text-red-700">Error Image Upload (image must be less than 2mb)</span>
           ) : filePerc > 0 && filePerc < 100 ? (
-            <span className="text-slate-700">Uploading {filePerc}%</span>
+            <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
           ) : filePerc === 100 ? (
             <span className="text-green-700">Image successfully uploaded!</span>
           ) : (
@@ -120,17 +134,17 @@ const handleDeleteUser=async()=>
         <input
           type="text"
           placeholder="username"
-          defaultValue={currentUser.username}
           id="username"
           className="border p-3 rounded-lg"
+          value={formData.username}
           onChange={handleChange}
         />
         <input
           type="email"
           placeholder="email"
           id="email"
-          defaultValue={currentUser.email}
           className="border p-3 rounded-lg"
+          value={formData.email}
           onChange={handleChange}
         />
         <input
@@ -138,6 +152,7 @@ const handleDeleteUser=async()=>
           placeholder="password"
           id="password"
           className="border p-3 rounded-lg"
+          value={formData.password}
           onChange={handleChange}
         />
         <button disabled={loading} className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80">
@@ -146,7 +161,7 @@ const handleDeleteUser=async()=>
       </form>
       <div className="flex justify-between mt-5">
         <span onClick={handleDeleteUser} className="text-red-700 cursor-pointer">Delete Account</span>
-        <span className="text-red-700 cursor-pointer">Sign out</span>
+        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">Sign out</span>
       </div>
       <p className="text-red-700 mt-5">{error ? error : ''}</p>
       <p className="text-green-700 mt-5">{updateSuccess ? 'User is Updated Successfully!' : ''}</p>
