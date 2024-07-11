@@ -1,9 +1,8 @@
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useRef, useState, useEffect } from 'react';
 import { getDownloadURL, getStorage, ref, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../firebase';
-import { updateUserStart, updateUserSuccess, updateUserFailure,deleteUserStart, deleteUserFailure, deleteUserSuccess } from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
+import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserFailure, deleteUserStart, deleteUserSuccess, signOutUserStart,signOutUserFailure,signInSuccess} from '../redux/user/userSlice';
 
 export default function Profile() {
   const fileRef = useRef(null);
@@ -13,10 +12,10 @@ export default function Profile() {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [formData, setFormData] = useState({
-    username: currentUser.username,
-    email: currentUser.email,
+    username: currentUser?.username || '',
+    email: currentUser?.email || '',
     password: '',
-    avatar: currentUser.avatar,
+    avatar: currentUser?.avatar || '',
   });
   const dispatch = useDispatch();
 
@@ -42,9 +41,14 @@ export default function Profile() {
         setFileUploadError(true);
       },
       () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) =>
-          setFormData((prev) => ({ ...prev, avatar: downloadURL }))
-        );
+        getDownloadURL(uploadTask.snapshot.ref)
+          .then((downloadURL) => {
+            setFormData((prev) => ({ ...prev, avatar: downloadURL }));
+            setFileUploadError(false);
+          })
+          .catch((error) => {
+            setFileUploadError(true);
+          });
       }
     );
   };
@@ -77,14 +81,33 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteUser = async () => {
-   try {
+  const handleDeleteUser = async() => {
+    // Implement delete user functionality
+    try {
     dispatch(deleteUserStart());
-    const res=await fetch(`/api/user/delete/${currentUser._id}`,
-      {
-        method:'DELETE',
-      }
-    );
+    const res=await fetch(`/api/user/delete/${currentUser._id}`,{ 
+      method:'DELETE',
+    });
+    const data=await res.json();
+    if(data.success === false)
+    {
+      dispatch(deleteUserFailure(data.message));
+      return;
+    }
+    dispatch(deleteUserSuccess(data));
+  }
+
+    
+    catch (error) {
+      dispatch(deleteUserFailure(error.message))
+    }
+  };
+
+  const handleSignOut = async() => {
+    // Implement sign out functionality
+   try {
+    dispatch(signOutUserStart())
+    const res=await fetch('/api/auth/signout');
     const data=await res.json();
     if(data.success === false)
     {
@@ -93,14 +116,8 @@ export default function Profile() {
     }
     dispatch(deleteUserSuccess(data));
    } catch (error) {
-    dispatch(deleteUserFailure(error.message));
+    dispatch(deleteUserFailure(data.message));
    }
-  };
-
-  const handleSignOut = async () => {
-    // Implement sign-out functionality here
-    // Example:
-    // window.location.href = '/signin';
   };
 
   return (
@@ -116,7 +133,7 @@ export default function Profile() {
         />
         <img
           onClick={() => fileRef.current.click()}
-          src={formData.avatar || currentUser.avatar}
+          src={formData.avatar || currentUser?.avatar}
           alt="profile"
           className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
         />
