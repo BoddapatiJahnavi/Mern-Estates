@@ -1,0 +1,22 @@
+/* Listing.css */
+
+.image-container {
+    position: relative;
+    width: 100%;
+    height: 580px;
+    overflow: hidden;
+  }
+  
+  .image {
+    width: 100%;
+    height: 150%;
+    object-fit: cover; /* Ensures the image covers the container while maintaining aspect ratio */
+    object-position: center; /* Centers the image within the container */
+    border-radius: 8px; /* Optional: adds slightly rounded corners */
+    transition: transform 0.3s ease-in-out; /* Adds a smooth transition for any transformations */
+  }
+  
+  .image-container:hover .image {
+    transform: scale(1.05); /* Slightly zooms in the image on hover */
+  }
+  
